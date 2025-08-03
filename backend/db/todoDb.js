@@ -56,6 +56,17 @@ class TodoDb {
             throw error;
         }
     }
+
+    async clearTodos() {
+        const clearQuery = 'TRUNCATE TABLE todos RESTART IDENTITY';
+        try {
+            await this.query(clearQuery);
+            console.log('All todos cleared successfully');
+        } catch (error) {
+            console.error('Error clearing todos:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = new TodoDb();
