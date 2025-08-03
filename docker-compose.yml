@@ -1,0 +1,90 @@
+# version: "3.8"
+
+services:
+  postgresdb:
+    image: postgres:15
+    restart: unless-stopped
+    env_file: ./.env
+    environment:
+      - POSTGRES_USER=${POSTGRESDB_USER}
+      - POSTGRES_PASSWORD=${POSTGRESDB_ROOT_PASSWORD}
+      - POSTGRES_DB=${POSTGRESDB_DATABASE}
+    ports:
+      - "${POSTGRESDB_LOCAL_PORT}:${POSTGRESDB_DOCKER_PORT}"
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRESDB_USER} -d ${POSTGRESDB_DATABASE}",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgresdb
+      - DB_USER=${POSTGRESDB_USER}
+      - DB_PASSWORD=${POSTGRESDB_ROOT_PASSWORD}
+      - DB_NAME=${POSTGRESDB_DATABASE}
+      - DB_PORT=${POSTGRESDB_DOCKER_PORT}
+    env_file: ./.env
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => { process.exit(1) })",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+   # ---------------------------------------------------
+  # Testing Service
+  # ---------------------------------------------------
+  test:
+    build: . # Uses the same Dockerfile as the backend
+    container_name: jest-test-runner
+    depends_on:
+      - db
+    environment:
+      # The test runner also needs the separate connection variables
+     - DB_HOST=postgresdb
+     - DB_USER=${POSTGRESDB_USER}
+      - DB_PASSWORD=${POSTGRESDB_ROOT_PASSWORD}
+      - DB_NAME=${POSTGRESDB_DATABASE}
+      - DB_PORT=${POSTGRESDB_DOCKER_PORT}
+      - NODE_ENV= test
+    networks:
+      - app-network
+    # Override the default command to run tests instead of starting the server
+    command: ["npm", "test"]
+
+
+  frontend:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.frontend
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  db:

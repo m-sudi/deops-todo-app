@@ -1,5 +1,26 @@
-node_modules
-build
-npm-debug.log
+node_modules/
+*.log
+
+# Environment files
 .env
+.env.local
+.env.production
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Build outputs
+dist/
+build/
+coverage/
