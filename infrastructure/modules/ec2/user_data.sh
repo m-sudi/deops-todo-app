@@ -1,6 +1,4 @@
 
-# -------------------------------------------------------------------
-# infrastructure/modules/ec2/user_data.sh
 #!/bin/bash
 yum update -y
 yum install -y docker

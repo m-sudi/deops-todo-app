@@ -14,7 +14,11 @@ variable "private_subnets" {
   description = "Private subnet IDs"
   type        = list(string)
 }
-
+variable "port" {
+  description = "port value"
+  type = number
+  default = 3000
+}
 variable "security_group_id" {
   description = "Security group ID for EC2 instances"
   type        = string
@@ -37,5 +41,7 @@ variable "key_pair_name" {
   default     = ""
 }
 
-
-
+variable "instance_profile" {
+  description = "IAM instance profile name"
+  type        = string
+}

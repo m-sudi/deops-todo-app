@@ -141,6 +141,7 @@ module "ec2" {
   target_group_arn  = module.alb.target_group_arn
   instance_type     = var.instance_type
   key_pair_name     = var.key_pair_name
+  instance_profile   = aws_iam_instance_profile.ec2_profile.name
 }
 
 # RDS Database
@@ -181,4 +182,33 @@ resource "aws_s3_bucket_public_access_block" "app_assets" {
 resource "aws_cloudwatch_log_group" "app_logs" {
   name              = "/aws/ec2/${var.environment}-todo-app"
   retention_in_days = 7
+}
+
+
+# IAM Role for EC2 instances to access CloudWatch
+resource "aws_iam_role" "ec2_role" {
+  name = "${var.environment}-ec2-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_cloudwatch" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "${var.environment}-ec2-profile"
+  role = aws_iam_role.ec2_role.name
 }

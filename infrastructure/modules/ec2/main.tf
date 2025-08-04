@@ -19,8 +19,12 @@ resource "aws_launch_template" "app" {
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
     environment = var.environment
+      port        = var.port
   }))
 
+  iam_instance_profile {
+    name = var.instance_profile
+  }
   tag_specifications {
     resource_type = "instance"
     tags = {
